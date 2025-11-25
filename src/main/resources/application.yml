@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: Linfinityfirst
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/linfinitydb?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: spring
+    password: spring1234
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+server:
+  tomcat:
+    threads:
+      max: 5
+      min-spare: 3
+
+logging:
+  level:
+    org:
+      springframework:
+        security: trace
