@@ -34,27 +34,25 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("권한없이 들어갈 수 있는 url").permitAll()
-                        // .requestMatchers("/admin/**").hasRole("ADMIN")
-                        // .requestMatchers("/shop/**").hasAnyRole("USER", "ADMIN")
-                        .requestMatchers("QNA 관련 url 추가").hasAnyRole("USER", "ADMIN", "ROOT", "SELLER") // 비회원 빼고 모두 접근
+                        .requestMatchers("/signup", "/", "login", "/qna", "/qna/{id}").permitAll()   // 회원가입, 인덱스 페이지, 로그인 페이지, QnA 게시판, QnA 게시글 상세 화면은 누구나 접근 가능
+                        .requestMatchers("/qna/write").hasAnyRole("USER", "ADMIN", "ROOT", "SELLER") // QnA 글쓰기 게시판은 비회원 빼고 모두 접근
                         .anyRequest().authenticated()
                 );
 
         http
                 .formLogin(form -> form
-                        .loginPage("/user/loginform")
+                        .loginPage("/login")    // 컨트롤러의 url
                         .loginProcessingUrl("/login")   // 로그인 폼 action에 이 url이 들어가야함
                         .usernameParameter("username")  // html에 있는 username의 name과 맞아야함
                         .passwordParameter("password")  // html에 있는 password의 name과 맞아야함
-                        .defaultSuccessUrl("/user/welcome", false)
+                        .defaultSuccessUrl("/", false)  // 로그인 페이지로 직접 접속해서 로그인 성공 시 PageController의 @GetMapping("/")과 연결
                         .permitAll()
                 );
 
         http
                 .logout(logout -> logout
                         .logoutUrl("/logout")
-                        .logoutSuccessUrl("/user/welcome")
+                        .logoutSuccessUrl("/")  // 로그아웃 시 index.html로 연결
                 );
 
         http
