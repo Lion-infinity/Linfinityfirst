@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.example.linfinityfirst.security.CustomUserDetailsService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.session.SessionRegistry;
@@ -34,7 +35,8 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/signup", "/", "login", "/qna", "/qna/{id}").permitAll()   // 회원가입, 인덱스 페이지, 로그인 페이지, QnA 게시판, QnA 게시글 상세 화면은 누구나 접근 가능
+                        .requestMatchers("/signup", "/", "/login", "/qna", "/qna/{id}").permitAll()   // 회원가입, 인덱스 페이지, 로그인 페이지, QnA 게시판, QnA 게시글 상세 화면은 누구나 접근 가능
+                        .requestMatchers(HttpMethod.POST,"/api/auth/signup").permitAll()    // 회원가입 요청 또한 권한이 없어도 보낼 수 있어야 함
                         .requestMatchers("/qna/write").hasAnyRole("USER", "ADMIN", "ROOT", "SELLER") // QnA 글쓰기 게시판은 비회원 빼고 모두 접근
                         .anyRequest().authenticated()
                 );
