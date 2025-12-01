@@ -30,14 +30,33 @@ public class QnaController {
     public ResponseEntity<List<QnaResponseDto>> getAllQna() {
         return ResponseEntity.ok(qnaService.getAllQna());
     }
+    // 3. 상세 조회
+    @GetMapping("/{qnaId}")
+    public ResponseEntity<QnaResponseDto> getQna(@PathVariable Long qnaId) {
+        return ResponseEntity.ok(qnaService.getQna(qnaId));
+    }
 
-    // 3. 답변 등록 (ROOT,ADMIN)
+    // 4. 질문 수정 (본인/관리자)
+    @PutMapping("/{qnaId}")
+    public ResponseEntity<String> updateQna(@PathVariable Long qnaId,
+                                            @RequestBody QnaRequestDto requestDto,
+                                            Principal principal) {
+        qnaService.updateQna(qnaId, requestDto, principal.getName());
+        return ResponseEntity.ok("질문이 수정되었습니다.");
+    }
+
+    // 5. 질문 삭제 (본인/관리자)
+    @DeleteMapping("/{qnaId}")
+    public ResponseEntity<String> deleteQna(@PathVariable Long qnaId, Principal principal) {
+        qnaService.deleteQna(qnaId, principal.getName());
+        return ResponseEntity.ok("질문이 삭제되었습니다.");
+    }
+
+    // 6. 답변 등록
     @PostMapping("/{qnaId}/answer")
     public ResponseEntity<String> answerQna(@PathVariable Long qnaId,
-                                            @RequestBody QnaAnswerRequestDto answerDto) { // [변경]
-
+                                            @RequestBody QnaAnswerRequestDto answerDto) {
         qnaService.answerQna(qnaId, answerDto.getAnswer());
-
         return ResponseEntity.ok("답변이 등록되었습니다.");
     }
 }
