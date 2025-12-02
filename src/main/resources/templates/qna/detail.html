@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>질문 상세 - Linfinity Shop</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 p-10 flex justify-center">
+
+<!-- [추가] 권한 체크를 위한 현재 로그인 정보 (화면에는 보이지 않음) -->
+<div class="hidden">
+    <!-- 로그인한 유저의 아이디 -->
+    <span id="currentUser" sec:authorize="isAuthenticated()" sec:authentication="name"></span>
+    <!-- 관리자(ROOT, ADMIN) 여부 확인용 플래그 -->
+    <span id="isAdmin" sec:authorize="hasAnyRole('ROOT', 'ADMIN')">true</span>
+</div>
+
+<div class="bg-white p-8 rounded shadow-md w-full max-w-3xl">
+    <!-- 질문 영역 -->
+    <div class="border-b pb-6 mb-6">
+        <!-- 수정 시 제목 입력칸으로 변환하기 위해 id 부여 -->
+        <h1 id="titleText" class="text-3xl font-bold mb-2"></h1>
+        <input type="text" id="titleInput" class="hidden w-full text-2xl font-bold mb-2 border rounded px-2 py-1">
+
+        <div class="text-gray-500 text-sm mb-4">
+            작성자: <span id="username" class="font-semibold text-gray-700"></span> |
+            작성일: <span id="createdAt"></span>
+        </div>
+
+        <!-- 수정 시 내용 입력칸으로 변환하기 위해 id 부여 -->
+        <div id="questionText" class="text-gray-800 whitespace-pre-wrap leading-relaxed"></div>
+        <textarea id="questionInput" class="hidden w-full border rounded px-3 py-2 h-40"></textarea>
+
+        <!-- [변경] 수정/삭제 버튼 영역 -->
+        <!-- 초기 상태는 hidden으로 숨겨두고, JS에서 권한 확인 후 보여줌 -->
+        <div class="mt-4 flex space-x-2 justify-end" id="userBtnGroup">
+            <button onclick="enableEditMode()" id="editBtn" class="hidden text-sm bg-gray-200 hover:bg-gray-300 text-gray-700 py-1 px-3 rounded">수정</button>
+            <button onclick="deleteQna()" id="delBtn" class="hidden text-sm bg-red-100 hover:bg-red-200 text-red-700 py-1 px-3 rounded">삭제</button>
+
+            <!-- 수정 완료/취소 버튼 (처음엔 숨김) -->
+            <button onclick="updateQna()" id="saveBtn" class="hidden text-sm bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded">저장</button>
+            <button onclick="cancelEdit()" id="cancelBtn" class="hidden text-sm bg-gray-300 hover:bg-gray-400 text-gray-800 py-1 px-3 rounded">취소</button>
+        </div>
+    </div>
+
+    <!-- 답변 영역 (기존 코드 유지) -->
+    <div id="answerSection" class="bg-gray-50 p-6 rounded mb-6 hidden">
+        <h3 class="font-bold text-lg text-green-700 mb-2">💡 관리자 답변</h3>
+        <div id="answerContent" class="text-gray-700 whitespace-pre-wrap"></div>
+        <div id="answeredAt" class="text-xs text-gray-400 mt-2 text-right"></div>
+    </div>
+
+    <!-- 답변 작성 폼 (관리자 전용) - 기존 코드 유지 -->
+    <div class="mt-8 pt-6 border-t" sec:authorize="hasAnyRole('ADMIN', 'SELLER', 'ROOT')">
+        <h3 class="font-bold text-gray-700 mb-2">답변 달기 (관리자/판매자)</h3>
+        <textarea id="newAnswer" class="w-full px-3 py-2 border rounded h-24 mb-2" placeholder="답변 내용을 입력하세요"></textarea>
+        <button onclick="submitAnswer()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm">
+            답변 등록
+        </button>
+    </div>
+
+    <div class="mt-6">
+        <a href="/qna" class="text-blue-500 hover:underline">← 목록으로 돌아가기</a>
+    </div>
+</div>
+
+<script>
+    const qnaId = window.location.pathname.split("/").pop();
+    let originalTitle = "";
+    let originalQuestion = "";
+
+    // 1. 상세 정보 가져오기
+    window.onload = function() {
+        fetch(`/api/qna/${qnaId}`)
+            .then(response => response.json())
+            .then(data => {
+                // 데이터 바인딩
+                document.getElementById('titleText').innerText = data.title;
+                document.getElementById('username').innerText = data.username;
+                document.getElementById('questionText').innerText = data.question; // question 필드 사용
+                document.getElementById('createdAt').innerText = data.questionCreatedAt ? data.questionCreatedAt.replace('T', ' ') : '';
+
+                // 수정 취소를 위해 원본 저장
+                originalTitle = data.title;
+                originalQuestion = data.question;
+
+                // [추가] 권한 체크 및 버튼 노출 로직
+                const currentUser = document.getElementById('currentUser').innerText; // 현재 로그인한 유저 ID
+                const isAdmin = document.getElementById('isAdmin') !== null;        // 관리자 여부 (태그 존재 여부로 확인)
+
+                // 수정 버튼: 작성자 본인만
+                if (currentUser === data.username) {
+                    document.getElementById('editBtn').classList.remove('hidden');
+                }
+
+                // 삭제 버튼: 작성자 본인 OR 관리자(ROOT, ADMIN)
+                if (currentUser === data.username || isAdmin) {
+                    document.getElementById('delBtn').classList.remove('hidden');
+                }
+
+                // 답변이 있으면 보여주기
+                if (data.answered) { // isAnswered 대신 answered 필드 확인 (DTO 필드명 주의)
+                    document.getElementById('answerSection').classList.remove('hidden');
+                    document.getElementById('answerContent').innerText = data.answer;
+                    document.getElementById('answeredAt').innerText = '답변일: ' + (data.answeredAt ? data.answeredAt.substring(0, 10) : '');
+                }
+            })
+            .catch(error => alert('글을 불러오지 못했습니다.'));
+    };
+
+    // 2. 질문 삭제 요청 (DELETE)
+    function deleteQna() {
+        if(!confirm("정말로 삭제하시겠습니까?")) return;
+
+        fetch(`/api/qna/${qnaId}`, {
+            method: 'DELETE'
+        })
+            .then(async response => {
+                if (response.ok) {
+                    alert("삭제되었습니다.");
+                    window.location.href = "/qna";
+                } else {
+                    // 서버에서 권한 없음 에러(500)를 던지면 여기서 잡힘
+                    alert("삭제 실패! (본인의 글이 아니거나 권한이 없습니다)");
+                }
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    // 3. 수정 모드 진입 (UI 변경)
+    function enableEditMode() {
+        document.getElementById('titleText').classList.add('hidden');
+        document.getElementById('questionText').classList.add('hidden');
+        document.getElementById('editBtn').classList.add('hidden');
+        document.getElementById('delBtn').classList.add('hidden');
+
+        const titleInput = document.getElementById('titleInput');
+        const questionInput = document.getElementById('questionInput');
+
+        titleInput.classList.remove('hidden');
+        questionInput.classList.remove('hidden');
+        titleInput.value = originalTitle;
+        questionInput.value = originalQuestion;
+
+        document.getElementById('saveBtn').classList.remove('hidden');
+        document.getElementById('cancelBtn').classList.remove('hidden');
+    }
+
+    // 4. 수정 취소
+    function cancelEdit() {
+        document.getElementById('titleText').classList.remove('hidden');
+        document.getElementById('questionText').classList.remove('hidden');
+        document.getElementById('editBtn').classList.remove('hidden');
+        document.getElementById('delBtn').classList.remove('hidden');
+
+        document.getElementById('titleInput').classList.add('hidden');
+        document.getElementById('questionInput').classList.add('hidden');
+        document.getElementById('saveBtn').classList.add('hidden');
+        document.getElementById('cancelBtn').classList.add('hidden');
+    }
+
+    // 5. 질문 수정 요청 (PUT)
+    function updateQna() {
+        const data = {
+            title: document.getElementById('titleInput').value,
+            question: document.getElementById('questionInput').value
+        };
+
+        fetch(`/api/qna/${qnaId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        })
+            .then(async response => {
+                if (response.ok) {
+                    alert("수정되었습니다.");
+                    window.location.reload();
+                } else {
+                    alert("수정 실패! (본인의 글이 아니거나 권한이 없습니다)");
+                }
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    // 6. 답변 등록
+    function submitAnswer() {
+        const answerText = document.getElementById('newAnswer').value;
+        if(!answerText) {
+            alert("내용을 입력해주세요.");
+            return;
+        }
+
+        fetch(`/api/qna/${qnaId}/answer`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ answer: answerText })
+        })
+            .then(async response => {
+                if (response.ok) {
+                    alert("답변이 등록되었습니다.");
+                    window.location.reload();
+                } else {
+                    alert("답변 등록 실패! (권한이 없거나 오류 발생)");
+                }
+            })
+            .catch(error => console.error('Error:', error));
+    }
+</script>
+
+</body>
+</html>
