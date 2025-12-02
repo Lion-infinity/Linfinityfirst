@@ -35,9 +35,10 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/signup", "/", "/login", "/qna", "/qna/{id}").permitAll()   // 회원가입, 인덱스 페이지, 로그인 페이지, QnA 게시판, QnA 게시글 상세 화면은 누구나 접근 가능
                         .requestMatchers(HttpMethod.POST,"/api/auth/signup").permitAll()    // 회원가입 요청 또한 권한이 없어도 보낼 수 있어야 함
-                        .requestMatchers("/qna/write").hasAnyRole("USER", "ADMIN", "ROOT", "SELLER") // QnA 글쓰기 게시판은 비회원 빼고 모두 접근
+                        .requestMatchers("/qna/write", "/{qnaId}/answer").hasAnyRole("USER", "SELLER") // QnA는 구매자, 판매자만 작성 가능
+                        .requestMatchers(HttpMethod.DELETE, "/{qnaId}").hasAnyRole("USER", "ADMIN", "ROOT", "SELLER")
+                        .requestMatchers("/signup", "/", "/login", "/qna", "/qna/{id}").permitAll()   // 회원가입, 인덱스 페이지, 로그인 페이지, QnA 게시판, QnA 게시글 상세 화면은 누구나 접근 가능
                         .anyRequest().authenticated()
                 );
 
