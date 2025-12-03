@@ -35,10 +35,21 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.POST,"/api/auth/signup").permitAll()    // 회원가입 요청 또한 권한이 없어도 보낼 수 있어야 함
-                        .requestMatchers("/qna/write", "/{qnaId}/answer").hasAnyRole("USER", "SELLER") // QnA는 구매자, 판매자만 작성 가능
-                        .requestMatchers(HttpMethod.DELETE, "/{qnaId}").hasAnyRole("USER", "ADMIN", "ROOT", "SELLER")
-                        .requestMatchers("/signup", "/", "/login", "/qna", "/qna/{id}").permitAll()   // 회원가입, 인덱스 페이지, 로그인 페이지, QnA 게시판, QnA 게시글 상세 화면은 누구나 접근 가능
+                        .requestMatchers(HttpMethod.POST,"/api/qna").hasAnyRole("USER") // 질문 등록
+                        .requestMatchers(HttpMethod.PUT,"/api/qna/{qnaId}").hasAnyRole("USER", "ADMIN", "ROOT", "SELLER")   // 질문 수정 : 본인, 관리자
+                        .requestMatchers(HttpMethod.DELETE, "/api/qna/{qnaId}").hasAnyRole("USER", "ADMIN", "ROOT", "SELLER") // 질문 삭제 : 본인, 관리자
+                        .requestMatchers(HttpMethod.POST, "/api/qna/{qnaId}/answer").hasAnyRole("ADMIN", "ROOT")    // 질문 답변 : 관리자
+                        .requestMatchers("/qna/write").hasAnyRole("USER", "SELLER") // QnA 글쓰기 페이지 : 사용자, 판매자
+                        .requestMatchers(HttpMethod.POST,"/api/auth/signup").permitAll()    // 회원가입 요청 : 전부
+                        .requestMatchers(
+                                "/signup",          // 회원가입 페이지
+                                "/",                // 메인페이지
+                                "/login",           // 로그인 페이지
+                                "/qna",             // QnA 게시판
+                                "/qna/{id}",        // QnA 게시글 상세 페이지
+                                "/api/qna",         // QnA 목록 조회
+                                "/api/qna/{qnaId}"  // QnA 상세 내용 조회
+                        ).permitAll()   // 권한 필요 없음
                         .anyRequest().authenticated()
                 );
 
