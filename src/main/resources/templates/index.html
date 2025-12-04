@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Linfinity Shop - Home</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+
+<!-- 상단 네비게이션 바 -->
+<nav class="bg-white shadow-lg">
+    <div class="max-w-6xl mx-auto px-4">
+        <div class="flex justify-between">
+            <div class="flex space-x-7">
+                <div>
+                    <!-- 로고 -->
+                    <a href="/" class="flex items-center py-4 px-2">
+                        <span class="font-semibold text-gray-500 text-lg">Linfinity Shop</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- 우측 메뉴 -->
+            <div class="hidden md:flex items-center space-x-3 ">
+                <!-- 로그인 안 했을 때 보여줄 메뉴 -->
+                <div sec:authorize="isAnonymous()" class="space-x-3">
+                    <a href="/login" class="py-2 px-2 font-medium text-gray-500 rounded hover:bg-green-500 hover:text-white transition duration-300">로그인</a>
+                    <a href="/signup" class="py-2 px-2 font-medium text-white bg-green-500 rounded hover:bg-green-400 transition duration-300">회원가입</a>
+                </div>
+
+                <!-- 로그인 했을 때 보여줄 메뉴 -->
+                <div sec:authorize="isAuthenticated()" class="flex items-center space-x-3">
+                    <span class="text-gray-500 text-sm">반갑습니다, <span sec:authentication="name" class="font-bold text-gray-700">User</span>님!</span>
+                    <form th:action="@{/logout}" method="post" class="inline">
+                        <button type="submit" class="py-2 px-2 font-medium text-gray-500 rounded hover:bg-red-500 hover:text-white transition duration-300">로그아웃</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- 메인 컨텐츠 -->
+<div class="relative py-20 bg-cover bg-no-repeat bg-center" style="background-image: url('https://picsum.photos/1600/900');">
+    <!-- 오버레이 추가: 배경 이미지를 어둡게 만들어 텍스트 가독성을 높임 -->
+    <div class="absolute inset-0 bg-black opacity-50"></div>
+
+    <div class="relative container mx-auto px-6 h-full flex flex-col justify-center z-10">
+        <h2 class="text-4xl font-bold mb-2 text-white drop-shadow-lg">쇼핑의 모든 것, Linfinity</h2>
+        <h3 class="text-2xl mb-8 text-gray-200 drop-shadow-lg">최고의 상품을 만나보세요.</h3>
+
+        <div class="flex space-x-4">
+            <a href="/qna" class="bg-white text-gray-800 font-bold rounded-full py-3 px-8 shadow-lg uppercase tracking-wider hover:bg-gray-100 transition">
+                QnA 게시판
+            </a>
+            <!-- 상품 목록 페이지는 아직 없으므로 링크만 둠 -->
+            <button onclick="alert('상품 페이지 준비중!')" class="bg-transparent border-2 border-white text-white font-bold rounded-full py-3 px-8 shadow-lg uppercase tracking-wider hover:bg-white hover:text-gray-800 transition">
+                상품 목록 보기
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 하단 기능 소개 섹션 -->
+<section class="container mx-auto px-6 p-10">
+    <h2 class="text-4xl font-bold text-center text-gray-800 mb-8">주요 기능</h2>
+    <div class="flex items-center flex-wrap mb-20">
+        <div class="w-full md:w-1/2">
+            <h4 class="text-3xl text-gray-800 font-bold mb-3">질문과 답변 (QnA)</h4>
+            <p class="text-gray-600 mb-8">구매 전 궁금한 점이 있으신가요? QnA 게시판을 통해 판매자와 소통하세요. 로그인 후 질문을 등록할 수 있습니다.</p>
+            <a href="/qna" class="text-indigo-500 font-bold hover:underline">게시판 바로가기 →</a>
+        </div>
+        <div class="w-full md:w-1/2 px-5">
+            <!-- 이미지 플레이스홀더 -->
+            <div class="bg-gray-200 h-64 w-full rounded-lg shadow-md flex items-center justify-center text-gray-500">
+                게시판 이미지
+            </div>
+        </div>
+    </div>
+</section>
+
+</body>
+</html>

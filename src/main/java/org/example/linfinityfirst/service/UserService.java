@@ -3,6 +3,7 @@ package org.example.linfinityfirst.service;
 import lombok.RequiredArgsConstructor;
 import org.example.linfinityfirst.domain.Role;
 import org.example.linfinityfirst.domain.User;
+import org.example.linfinityfirst.dto.request.LoginRequestDto;
 import org.example.linfinityfirst.dto.request.SignupRequestDto;
 import org.example.linfinityfirst.repository.RoleRepository;
 import org.example.linfinityfirst.repository.UserRepository;
@@ -32,5 +33,18 @@ public class UserService {
 
         User user = new User(requestDto.getUsername(), encodedPassword, requestDto.getEmail(), role);
         return userRepository.save(user).getId();
+    }
+
+    //AuthController의 login 요청을 처리하는 메서드 추가
+    @Transactional(readOnly = true)
+    public void login(LoginRequestDto requestDto) {
+        // 1. 아이디 존재 여부 확인
+        User user = userRepository.findByUsername(requestDto.getUsername())
+                .orElseThrow(() -> new IllegalArgumentException("가입되지 않은 아이디입니다."));
+
+        // 2. 비밀번호 일치 여부 확인 (암호화된 비번과 비교)
+        if (!passwordEncoder.matches(requestDto.getPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
+        }
     }
 }
