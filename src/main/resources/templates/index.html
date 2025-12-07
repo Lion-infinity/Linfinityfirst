@@ -18,6 +18,11 @@
                         <span class="font-semibold text-gray-500 text-lg">Linfinity Shop</span>
                     </a>
                 </div>
+                <!-- [추가됨] 좌측 메뉴 영역 -->
+                <div class="hidden md:flex items-center space-x-1">
+                    <a href="/notices" class="py-4 px-2 text-gray-500 font-semibold hover:text-red-500 transition duration-300">📢 공지사항</a>
+                    <a href="/qna" class="py-4 px-2 text-gray-500 font-semibold hover:text-blue-500 transition duration-300">❓ QnA</a>
+                </div>
             </div>
 
             <!-- 우측 메뉴 -->
@@ -50,6 +55,10 @@
         <h3 class="text-2xl mb-8 text-gray-200 drop-shadow-lg">최고의 상품을 만나보세요.</h3>
 
         <div class="flex space-x-4">
+            <!-- [추가] 공지사항 버튼 -->
+            <a href="/notices" class="bg-gray-800 text-white font-bold rounded-full py-3 px-8 shadow-lg uppercase tracking-wider hover:bg-gray-900 transition">
+                공지사항 확인
+            </a>
             <a href="/qna" class="bg-white text-gray-800 font-bold rounded-full py-3 px-8 shadow-lg uppercase tracking-wider hover:bg-gray-100 transition">
                 QnA 게시판
             </a>
@@ -64,6 +73,23 @@
 <!-- 하단 기능 소개 섹션 -->
 <section class="container mx-auto px-6 p-10">
     <h2 class="text-4xl font-bold text-center text-gray-800 mb-8">주요 기능</h2>
+
+    <!-- [추가] 공지사항 소개 섹션 -->
+    <div class="flex items-center flex-wrap mb-20 border-b pb-10">
+        <div class="w-full md:w-1/2 px-5 mb-6 md:mb-0">
+            <!-- 이미지 플레이스홀더 -->
+            <div class="bg-red-100 h-64 w-full rounded-lg shadow-md flex items-center justify-center text-red-500 font-bold text-xl">
+                📢 NOTICE
+            </div>
+        </div>
+        <div class="w-full md:w-1/2 pl-10">
+            <h4 class="text-3xl text-gray-800 font-bold mb-3">공지사항 (Notice)</h4>
+            <p class="text-gray-600 mb-8">쇼핑몰의 중요한 소식과 이벤트를 확인하세요.<br>최신 정보를 가장 빠르게 전달해 드립니다.</p>
+            <a href="/notices" class="text-red-500 font-bold hover:underline">공지사항 보러가기 →</a>
+        </div>
+    </div>
+
+    <!-- QnA 섹션 (기존 내용) -->
     <div class="flex items-center flex-wrap mb-20">
         <div class="w-full md:w-1/2">
             <h4 class="text-3xl text-gray-800 font-bold mb-3">질문과 답변 (QnA)</h4>
@@ -72,8 +98,8 @@
         </div>
         <div class="w-full md:w-1/2 px-5">
             <!-- 이미지 플레이스홀더 -->
-            <div class="bg-gray-200 h-64 w-full rounded-lg shadow-md flex items-center justify-center text-gray-500">
-                게시판 이미지
+            <div class="bg-gray-200 h-64 w-full rounded-lg shadow-md flex items-center justify-center text-gray-500 font-bold text-xl">
+                ❓ QnA
             </div>
         </div>
     </div>
