@@ -35,10 +35,19 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/notices", "/notices/{id}").permitAll()     // 공지사항 조회 화면
+                        .requestMatchers("/notices/write").hasAnyRole("ADMIN", "ROOT") // 공지는 관리자만 작성 가능
+
                         .requestMatchers(HttpMethod.POST,"/api/auth/signup").permitAll()    // 회원가입 요청 또한 권한이 없어도 보낼 수 있어야 함
                         .requestMatchers("/qna/write", "/{qnaId}/answer").hasAnyRole("USER", "SELLER") // QnA는 구매자, 판매자만 작성 가능
                         .requestMatchers(HttpMethod.DELETE, "/{qnaId}").hasAnyRole("USER", "ADMIN", "ROOT", "SELLER")
                         .requestMatchers("/signup", "/", "/login", "/qna", "/qna/{id}").permitAll()   // 회원가입, 인덱스 페이지, 로그인 페이지, QnA 게시판, QnA 게시글 상세 화면은 누구나 접근 가능
+
+                        .requestMatchers(HttpMethod.GET, "/api/qna/**", "/api/notices/**").permitAll() // QnA 및 공지사항 조회 허용
+                        //공지 사항 CUD (관리자 이용)
+                        .requestMatchers(HttpMethod.POST, "/api/notices/**").hasAnyRole("ADMIN", "ROOT")
+                        .requestMatchers(HttpMethod.PUT, "/api/notices/**").hasAnyRole("ADMIN", "ROOT")
+                        .requestMatchers(HttpMethod.DELETE, "/api/notices/**").hasAnyRole("ADMIN", "ROOT")
                         .anyRequest().authenticated()
                 );
 
