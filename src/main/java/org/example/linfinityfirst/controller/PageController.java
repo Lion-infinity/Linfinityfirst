@@ -42,4 +42,22 @@ public class PageController {
     public String qnaDetailPage(@PathVariable Long id) {
         return "qna/detail"; // templates/qna/detail.html
     }
+
+    // 공지사항 목록
+    @GetMapping("/notices")
+    public String noticeList() {
+        return "notice/list"; // templates/notice/list.html
+    }
+
+    // 공지사항 상세
+    @GetMapping("/notices/{id}")
+    public String noticeDetail(@PathVariable Long id) {
+        return "notice/detail"; // templates/notice/detail.html
+    }
+
+    // 공지사항 글쓰기
+    @GetMapping("/notices/write")
+    public String noticeWrite() {
+        return "notice/write"; // templates/notice/write.html
+    }
 }
