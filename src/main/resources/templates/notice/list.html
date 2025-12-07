@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>공지사항 - Linfinity Shop</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 p-10">
+<div class="max-w-4xl mx-auto bg-white p-6 rounded shadow">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-gray-800"><a href="/">📢 공지사항</a></h1>
+        <div class="flex space-x-2">
+            <a href="/" class="bg-gray-100 text-gray-600 px-4 py-2 rounded font-bold">🏠 홈으로</a>
+
+            <!-- 관리자만 보이는 버튼 -->
+            <a sec:authorize="hasAnyRole('ADMIN', 'ROOT', 'ROLE_ADMIN', 'ROLE_ROOT')"
+               href="/notices/write" class="bg-red-500 text-white px-4 py-2 rounded font-bold hover:bg-red-600">
+                공지 등록
+            </a>
+        </div>
+    </div>
+
+    <table class="min-w-full leading-normal">
+        <thead>
+        <tr class="bg-gray-100 border-b-2 text-left text-xs font-semibold text-gray-600 uppercase">
+            <th class="px-5 py-3 w-16">번호</th>
+            <th class="px-5 py-3">제목</th>
+            <th class="px-5 py-3 w-32">작성자</th>
+            <th class="px-5 py-3 w-24 text-center">조회수</th>
+            <th class="px-5 py-3 w-32">작성일</th>
+        </tr>
+        </thead>
+        <tbody id="noticeList"></tbody>
+    </table>
+</div>
+
+<script>
+    fetch('/api/notices')
+        .then(res => res.json())
+        .then(data => {
+            const list = document.getElementById('noticeList');
+            if(data.length === 0) {
+                list.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-gray-500">등록된 공지사항이 없습니다.</td></tr>';
+                return;
+            }
+            data.forEach((n, index) => {
+                const date = n.createdAt ? n.createdAt.substring(0, 10) : '-';
+                list.innerHTML += `
+                    <tr class="hover:bg-gray-50 cursor-pointer transition" onclick="location.href='/notices/${n.id}'">
+                        <td class="px-5 py-4 border-b text-sm text-gray-500">${index + 1}</td>
+                        <td class="px-5 py-4 border-b text-sm font-bold text-gray-900">
+                            <span class="text-red-500 mr-1">[공지]</span> ${n.title}
+                        </td>
+                        <td class="px-5 py-4 border-b text-sm text-gray-600">${n.writerName}</td>
+                        <td class="px-5 py-4 border-b text-sm text-gray-600 text-center">${n.viewCount}</td>
+                        <td class="px-5 py-4 border-b text-sm text-gray-600">${date}</td>
+                    </tr>`;
+            });
+        });
+</script>
+</body>
+</html>
