@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>상품 수정 - Linfinity Shop</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            font-size: 2em;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 25px;
+        }
+        form div {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #555;
+        }
+        input[type="text"],
+        input[type="number"],
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        textarea:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+        textarea {
+            resize: vertical;
+        }
+        .current-image-area {
+            margin-top: 10px;
+            padding: 10px;
+            border: 1px dashed #ddd;
+            border-radius: 4px;
+            text-align: center; /* 이미지를 중앙 정렬 */
+        }
+        .current-image-area img {
+            max-width: 150px;
+            max-height: 150px;
+            /* ⭐️ 이미지 경로 텍스트가 사라졌으므로, 이미지를 중앙에 띄웁니다. */
+            display: inline-block;
+            margin-top: 5px;
+            border-radius: 4px;
+            object-fit: contain;
+        }
+        .button-group {
+            margin-top: 30px;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        .button-group button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        .submit-btn {
+            background-color: #007bff;
+            color: white;
+        }
+        .submit-btn:hover {
+            background-color: #0056b3;
+        }
+        .cancel-btn {
+            background-color: #6c757d;
+            color: white;
+        }
+        .cancel-btn:hover {
+            background-color: #5a6268;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📝 상품 수정</h1>
+
+    <form id="product-edit-form">
+        <input type="hidden" id="productId" name="productId" th:value="${id}">
+
+        <div>
+            <label for="name">상품 이름:</label>
+            <input type="text" id="name" name="name" required>
+        </div>
+
+        <div>
+            <label>현재 이미지:</label>
+            <div class="current-image-area">
+                <img id="currentImagePreview" src="" alt="현재 상품 이미지" style="display: none;">
+            </div>
+            <input type="hidden" id="existingImageUrl" name="existingImageUrl">
+        </div>
+
+        <div>
+            <label for="imageFile">새 이미지 파일 (선택 사항):</label>
+            <input type="file" id="imageFile" name="imageFile" accept="image/*">
+        </div>
+
+        <div>
+            <label for="description">상품 설명:</label>
+            <textarea id="description" name="description" rows="7" required></textarea>
+        </div>
+
+        <div>
+            <label for="stock">재고 수량:</label>
+            <input type="number" id="stock" name="stock" required min="0">
+        </div>
+
+        <div class="button-group">
+            <button type="button" class="cancel-btn" id="cancelButton">취소</button>
+            <button type="submit" class="submit-btn">수정 완료</button>
+        </div>
+    </form>
+</div>
+
+<script th:inline="javascript">
+    const productId = document.getElementById('productId').value;
+    const form = document.getElementById('product-edit-form');
+    const cancelButton = document.getElementById('cancelButton');
+
+    document.addEventListener('DOMContentLoaded', fetchProductDetail);
+
+    // 1. 상품 상세 정보 불러와 폼에 채우기
+    function fetchProductDetail() {
+        if (!productId) return;
+
+        // 상품 상세 API 호출
+        fetch(`/api/product/${productId}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('상품 정보를 불러오는 데 실패했습니다.');
+                }
+                return response.json();
+            })
+            .then(product => {
+                document.getElementById('name').value = product.name;
+                document.getElementById('description').value = product.description;
+                document.getElementById('stock').value = product.stock;
+
+                // 이미지 정보 업데이트
+                const imageUrl = product.imageUrl && product.imageUrl.trim() !== ''
+                    ? product.imageUrl
+                    : '/images/default-placeholder.png'; // 대체 이미지 경로
+
+                document.getElementById('existingImageUrl').value = product.imageUrl || '';
+                // ⭐️ 이미지 경로 텍스트 노출 코드 제거 ⭐️
+
+                const imagePreview = document.getElementById('currentImagePreview');
+                imagePreview.src = imageUrl;
+                imagePreview.style.display = 'inline-block'; // 텍스트 제거에 따라 display 속성 조정
+            })
+            .catch(error => {
+                console.error('로드 오류:', error);
+                alert('상품 정보를 불러오는 데 실패했습니다.');
+                window.location.href = '/products';
+            });
+    }
+
+    // 2. 폼 제출 이벤트 핸들러 (상품 수정 요청)
+    form.addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        const formData = new FormData();
+
+        // 상품 DTO 구성
+        const productDto = {
+            name: document.getElementById('name').value,
+            description: document.getElementById('description').value,
+            stock: parseInt(document.getElementById('stock').value),
+            // 새 파일이 없으면 기존 URL을 DTO에 포함
+            imageUrl: document.getElementById('imageFile').files.length === 0
+                ? document.getElementById('existingImageUrl').value
+                : null
+        };
+
+        // DTO를 Blob으로 만들어 formData에 추가
+        formData.append('requestDto', new Blob([JSON.stringify(productDto)], { type: 'application/json' }));
+
+        // 파일 추가
+        const imageFile = document.getElementById('imageFile').files[0];
+        if (imageFile) {
+            formData.append('imageFile', imageFile);
+        }
+
+        // 상품 수정 API 호출 (PUT /api/product/{productId})
+        fetch(`/api/product/${productId}`, {
+            method: 'PUT',
+            body: formData
+        })
+            .then(response => {
+                if (!response.ok) {
+                    // 오류 응답의 본문을 읽어 사용자에게 표시
+                    return response.text().then(text => { throw new Error(text || '수정 실패') });
+                }
+                return response.text();
+            })
+            .then(() => {
+                alert("상품 수정이 완료되었습니다.");
+                window.location.href = `/products/${productId}`; // 상세 페이지로 이동
+            })
+            .catch(error => {
+                console.error('수정 오류:', error);
+                alert(`상품 수정 실패: ${error.message}`);
+            });
+    });
+
+    // 3. 취소 버튼 클릭 시 상세 페이지로 이동
+    cancelButton.addEventListener('click', function() {
+        if (confirm("수정을 취소하고 상세 페이지로 돌아가시겠습니까?")) {
+            window.location.href = `/products/${productId}`;
+        }
+    });
+
+</script>
+</body>
+</html>
