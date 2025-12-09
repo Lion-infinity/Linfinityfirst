@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>상품 상세 - Linfinity Shop</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+        }
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1000px;
+            margin: 0 auto 20px auto;
+            padding: 0 10px;
+        }
+        h1 {
+            color: #333;
+            font-size: 2em;
+        }
+        .product-container {
+            display: flex;
+            gap: 40px;
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: white;
+            border: 1px solid #ddd;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .image-area {
+            flex: 1;
+            max-width: 50%;
+            text-align: center;
+        }
+        .image-area img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .info-area {
+            flex: 1;
+            padding-left: 20px;
+        }
+        .info-area h2 {
+            margin-top: 0;
+            font-size: 1.8em;
+            color: #007bff;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        .info-area p {
+            margin: 10px 0;
+        }
+        .info-area strong {
+            display: inline-block;
+            width: 90px;
+            color: #555;
+            font-weight: bold;
+        }
+        .description-box {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px dashed #ccc;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+        }
+        .stock-info {
+            font-size: 1.1em;
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .button-group {
+            margin-top: 30px;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-start;
+        }
+        .button-group button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        .buy-btn {
+            background-color: #28a745;
+            color: white;
+        }
+        .buy-btn:hover {
+            background-color: #218838;
+        }
+        .edit-btn {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        .edit-btn:hover {
+            background-color: #e0a800;
+        }
+        .list-btn {
+            background-color: #6c757d;
+            color: white;
+        }
+        .list-btn:hover {
+            background-color: #5a6268;
+        }
+        .main-btn {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        .main-btn:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header-container">
+    <h1 id="page-title">상품 상세 정보</h1>
+    <a href="/" class="main-btn">🏠 메인 화면으로</a>
+</div>
+
+<div class="hidden" style="display: none;">
+    <span id="currentUser" sec:authorize="isAuthenticated()" sec:authentication="name"></span>
+    <span id="isSeller" sec:authorize="hasRole('SELLER')">true</span>
+    <span id="isAdminOrRoot" sec:authorize="hasAnyRole('ADMIN', 'ROOT')">true</span>
+</div>
+
+<div id="product-detail" class="product-container">
+    <p>상품 정보를 불러오는 중...</p>
+</div>
+
+<script th:inline="javascript">
+    // URL 경로에서 상품 ID를 가져옵니다.
+    const productId = window.location.pathname.split("/").pop();
+
+    document.addEventListener('DOMContentLoaded', fetchProductDetail);
+
+    // 상품 상세 정보 가져오기
+    function fetchProductDetail() {
+        if (!productId || isNaN(productId)) {
+            document.getElementById('product-detail').innerHTML = '<p style="color: red; text-align: center;">유효한 상품 ID가 지정되지 않았습니다.</p>';
+            return;
+        }
+
+        // API 엔드포인트 호출
+        fetch(`/api/product/${productId}`)
+            .then(response => {
+                if (response.status === 404) {
+                    throw new Error('상품이 존재하지 않습니다.');
+                }
+                if (!response.ok) {
+                    throw new Error('데이터 로드 중 네트워크 응답 오류');
+                }
+                return response.json();
+            })
+            .then(product => {
+                // 페이지 제목 업데이트
+                document.getElementById('page-title').textContent = product.name;
+
+                const detailContainer = document.getElementById('product-detail');
+                if (!detailContainer) return;
+
+                detailContainer.className = 'product-container';
+
+                const imageUrl = product.imageUrl && product.imageUrl.trim() !== ''
+                    ? product.imageUrl
+                    : '/images/default-placeholder.png';
+
+                // 상품 번호(ID)를 화면에 표시하는 부분을 제거했습니다.
+                detailContainer.innerHTML = `
+                    <div class="image-area">
+                        <img src="${imageUrl}" alt="${product.name} 이미지">
+                    </div>
+
+                    <div class="info-area">
+                        <h2>${product.name}</h2>
+                        <p><strong>판매자:</strong> ${product.sellerName}</p>
+                        <p><strong>재고 수량:</strong> <span class="stock-info">${product.stock}개</span></p>
+
+                        <div class="description-box">
+                            <h4>상품 상세 설명</h4>
+                            <p>${product.description}</p>
+                        </div>
+
+                        <div class="button-group">
+                            <button onclick="purchaseProduct()" class="buy-btn">🛒 상품 구매</button>
+
+                            <a id="editLink" href="/products/edit/${product.productId}" class="hidden">
+                                <button class="edit-btn">✏️ 상품 수정</button>
+                            </a>
+
+                            <a href="/products">
+                                <button class="list-btn">🔙 목록으로</button>
+                            </a>
+                        </div>
+                    </div>
+                `;
+
+                // 권한 체크 및 버튼 노출 실행
+                checkAuthAndShowButtons(product);
+
+            })
+            .catch(error => {
+                console.error('상품 상세 로드 중 오류:', error);
+                const detailContainer = document.getElementById('product-detail');
+                if (detailContainer) {
+                    detailContainer.innerHTML = `<p style="color: red; text-align: center; margin-top: 50px;">상품 상세 정보를 불러오는 데 실패했습니다: ${error.message}</p>`;
+                }
+            });
+    }
+
+    /**
+     * 권한을 체크하여 상품 수정 버튼을 노출합니다.
+     */
+    function checkAuthAndShowButtons(product) {
+        // 1. 로그인 사용자 이름 및 권한 요소 가져오기
+        const currentUserElement = document.getElementById('currentUser');
+        const currentUser = currentUserElement ? currentUserElement.innerText : '';
+        const sellerName = product.sellerName;
+
+        const isSellerElement = document.getElementById('isSeller');
+        const isAdminOrRootElement = document.getElementById('isAdminOrRoot');
+
+        // HTML 요소가 존재하면 해당 권한을 가진 것으로 간주합니다.
+        const isSeller = !!isSellerElement;
+        const isAdminOrRoot = !!isAdminOrRootElement;
+
+        // 2. ⭐️ 수정 권한 조건 확인: ⭐️
+        // (ADMIN 또는 ROOT 권한이 있는 경우) OR (SELLER 권한이 있고 현재 사용자가 판매자인 경우)
+        const canEdit = isAdminOrRoot || (isSeller && currentUser && currentUser === sellerName);
+
+        // 3. 수정 링크 요소 가져오기
+        const editLink = document.getElementById('editLink');
+
+        // 4. 권한이 있을 경우 버튼 노출
+        if (editLink && canEdit) {
+            editLink.classList.remove('hidden');
+        }
+    }
+
+    /**
+     * 상품 구매 버튼 클릭 시 팝업을 띄우는 함수
+     */
+    function purchaseProduct() {
+        alert("🎉 결제가 완료되었습니다.");
+    }
+</script>
+<style>
+    /* JavaScript에서 사용하는 숨김 클래스 */
+    .hidden {
+        display: none !important;
+    }
+</style>
+</body>
+</html>
