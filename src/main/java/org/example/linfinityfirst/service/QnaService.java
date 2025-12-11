@@ -2,6 +2,7 @@ package org.example.linfinityfirst.service;
 
 import lombok.RequiredArgsConstructor;
 import org.example.linfinityfirst.domain.Qna;
+//import org.example.linfinityfirst.domain.Role;
 import org.example.linfinityfirst.domain.User;
 import org.example.linfinityfirst.dto.request.QnaRequestDto;
 import org.example.linfinityfirst.dto.response.QnaResponseDto;

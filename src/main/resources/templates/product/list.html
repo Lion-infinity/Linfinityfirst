@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>상품 목록</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .product-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            max-width: 1200px;
+            margin: 0 auto 20px auto;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+        .button-group button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        .register-btn {
+            background-color: #28a745;
+            color: white;
+        }
+        .register-btn:hover {
+            background-color: #1e7e34;
+        }
+        .home-btn {
+            background-color: #6c757d;
+            color: white;
+        }
+        .home-btn:hover {
+            background-color: #5a6268;
+        }
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .product-card {
+            border: 1px solid #ccc;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: box-shadow 0.3s;
+        }
+        .product-card:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        /* ⭐️ 상품 이미지 스타일: 높이 300px 고정 및 잘림 방지 (contain) ⭐️ */
+        .product-card img {
+            width: 100%;       /* 너비를 카드의 전체 너비로 설정 */
+            height: 300px;     /* 높이를 300px로 고정 */
+            object-fit: contain; /* 이미지가 잘리지 않고 전체가 보이도록 비율 유지 */
+            border-radius: 6px;
+            margin-bottom: 10px;
+            background-color: #f0f0f0; /* 이미지가 채우지 못한 배경 영역 색상 */
+        }
+        .product-card h3 {
+            font-size: 1.2em;
+            margin: 5px 0;
+        }
+        .product-card a {
+            text-decoration: none;
+            color: #007bff;
+        }
+        .product-card a:hover {
+            text-decoration: underline;
+        }
+        .empty-list-message {
+            text-align: center;
+            margin-top: 50px;
+            font-size: 1.2em;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+
+<div class="product-header">
+    <h1>🛒 상품 목록</h1>
+    <div class="button-group">
+
+        <a th:href="@{/product/register}" sec:authorize="hasAnyRole('SELLER', 'ADMIN', 'ROOT')">
+            <button class="register-btn">⬆️ 새 상품 등록</button>
+        </a>
+
+        <a th:href="@{/}" class="home-btn-link">
+            <button class="home-btn">🏠 메인으로</button>
+        </a>
+    </div>
+</div>
+
+<div id="product-list" class="product-grid">
+</div>
+
+<script th:inline="javascript">
+    document.addEventListener('DOMContentLoaded', fetchProducts);
+
+    function fetchProducts() {
+        // 상품 목록 API 엔드포인트 호출
+        fetch('/api/product')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('상품 목록을 불러오는 데 실패했습니다.');
+                }
+                return response.json();
+            })
+            .then(products => {
+                const container = document.getElementById('product-list');
+                container.innerHTML = ''; // 기존 내용 초기화
+
+                if (products.length === 0) {
+                    container.innerHTML = '<p class="empty-list-message">현재 등록된 상품이 없습니다. ⬆️ **새 상품 등록** 버튼을 이용해 상품을 등록해보세요.</p>';
+                    return;
+                }
+
+                products.forEach(product => {
+                    const productCard = document.createElement('div');
+                    productCard.className = 'product-card';
+
+                    // imageUrl이 null 또는 비어 있을 경우 대체 이미지 경로 설정
+                    const imageUrl = product.imageUrl && product.imageUrl.trim() !== ''
+                        ? product.imageUrl
+                        : '/images/default-placeholder.png'; // 대체 이미지 경로
+
+                    productCard.innerHTML = `
+                            <a href="/products/${product.productId}">
+                                <img src="${imageUrl}" alt="${product.name} 이미지">
+                            </a>
+                            <h3><a href="/products/${product.productId}">${product.name}</a></h3>
+                            <p>재고: ${product.stock}</p>
+                            <p>판매자: ${product.sellerName}</p>
+                        `;
+                    container.appendChild(productCard);
+                });
+            })
+            .catch(error => {
+                console.error('상품 목록 로드 중 오류:', error);
+                document.getElementById('product-list').innerHTML = `<p class="empty-list-message" style="color: red;">상품 목록을 불러오는 데 실패했습니다: ${error.message}</p>`;
+            });
+    }
+</script>
+</body>
+</html>

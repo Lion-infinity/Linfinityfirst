@@ -28,6 +28,7 @@ public class Notice {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
 
+    // 공지사항-관리자
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
