@@ -126,4 +126,14 @@ public class ProductService {
                 requestDto.getStock()
         );
     }
+    //내가 등록한 상품 조회 (판매자 마이페이지용)
+    @Transactional(readOnly = true)
+    public List<ProductResponseDto> getMyProducts(String username) {
+        User seller = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("판매자 정보를 찾을 수 없습니다."));
+
+        return productRepository.findAllBySellerOrderByIdDesc(seller).stream()
+                .map(ProductResponseDto::from)
+                .collect(Collectors.toList());
+    }
 }
