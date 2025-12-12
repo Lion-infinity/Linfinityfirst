@@ -20,54 +20,57 @@ public class NoticeService {
     private final NoticeRepository noticeRepository;
     private final UserRepository userRepository;
 
-    // 공지사항 등록 (관리자만)
+    // 공지사항 등록
     @Transactional
     public Long createNotice(NoticeRequestDto dto, String username) {
         User user = getUserOrThrow(username);
-        checkAdminRole(user); // 권한 체크
+
 
         Notice notice = new Notice(dto.getTitle(), dto.getContent(), user);
         return noticeRepository.save(notice).getId();
     }
 
-    // 공지사항 수정 (관리자만)
+    // 공지사항 수정
     @Transactional
     public void updateNotice(Long id, NoticeRequestDto dto, String username) {
         Notice notice = getNoticeOrThrow(id);
-        User user = getUserOrThrow(username);
-        checkAdminRole(user); // 권한 체크
+
 
         notice.update(dto.getTitle(), dto.getContent());
     }
 
-    // 공지사항 삭제 (관리자만)
+    // 공지사항 삭제
     @Transactional
-    public void deleteNotice(Long id, String username) {
+    public void deleteNotice(Long id) { // 삭제는 작성자 정보도 필요 없음 (관리자면 삭제 가능)
         Notice notice = getNoticeOrThrow(id);
-        User user = getUserOrThrow(username);
-        checkAdminRole(user); // 권한 체크
-
         noticeRepository.delete(notice);
     }
 
-    // 공지사항 상세 조회 (누구나, 조회수 증가)
+    // 상세 조회
     @Transactional
     public NoticeResponseDto getNotice(Long id) {
         Notice notice = getNoticeOrThrow(id);
-        notice.increaseViewCount(); // 조회수 증가 (Dirty Checking)
+        notice.increaseViewCount();
         return NoticeResponseDto.from(notice);
     }
 
-    // 공지사항 전체 목록 (누구나, 최신순)
+    // 전체 목록 조회
     @Transactional(readOnly = true)
     public List<NoticeResponseDto> getAllNotices() {
-        // [수정] Repository에 정의한 최신순 정렬 메서드 사용
         return noticeRepository.findAllByOrderByCreatedAtDesc().stream()
                 .map(NoticeResponseDto::from)
                 .collect(Collectors.toList());
     }
 
-    // --- 헬퍼 메서드 ---
+    // [마이페이지용] 내가 등록한 공지사항 목록 조회
+    @Transactional(readOnly = true)
+    public List<NoticeResponseDto> getMyNoticeList(String username) {
+        User user = getUserOrThrow(username);
+        return noticeRepository.findAllByUserOrderByCreatedAtDesc(user).stream()
+                .map(NoticeResponseDto::from)
+                .collect(Collectors.toList());
+    }
+
     private User getUserOrThrow(String username) {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
@@ -76,16 +79,5 @@ public class NoticeService {
     private Notice getNoticeOrThrow(Long id) {
         return noticeRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다."));
-    }
-
-    private void checkAdminRole(User user) {
-        String role = user.getRole().getRoleName();
-        // DB에 접두사가 있든 없든 모두 체크
-        boolean isAdmin = role.equals("ADMIN") || role.equals("ROOT") ||
-                role.equals("ROLE_ADMIN") || role.equals("ROLE_ROOT");
-
-        if (!isAdmin) {
-            throw new IllegalArgumentException("관리자 권한이 필요합니다.");
-        }
     }
 }
