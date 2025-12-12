@@ -94,4 +94,16 @@ public class QnaService {
                 .orElseThrow(() -> new IllegalArgumentException("질문을 찾을 수 없습니다."));
         return QnaResponseDto.from(qna);
     }
+
+    //내가 쓴 QnA 목록 조회 (마이페이지용)
+    @Transactional(readOnly = true)
+    public List<QnaResponseDto> getMyQnaList(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        // QnaRepository에 findAllByUserOrderByCreatedAtDesc 메서드 필요
+        return qnaRepository.findAllByUserOrderByCreatedAtDesc(user).stream()
+                .map(QnaResponseDto::from)
+                .collect(Collectors.toList());
+    }
 }
