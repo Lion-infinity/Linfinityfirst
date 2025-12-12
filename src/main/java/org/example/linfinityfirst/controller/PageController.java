@@ -84,4 +84,10 @@ public class PageController {
     public String productEditPage(@PathVariable Long id) {
         return "product/edit"; // templates/product/edit.html
     }
+
+    //마이페이지
+    @GetMapping("/mypage")
+    public String myPage() {
+        return "user/mypage"; // templates/user/mypage.html
+    }
 }
