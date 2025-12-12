@@ -18,7 +18,7 @@
                         <span class="font-semibold text-gray-500 text-lg">Linfinity Shop</span>
                     </a>
                 </div>
-                <!-- [추가됨] 좌측 메뉴 영역 -->
+                <!-- 좌측 메뉴 영역 -->
                 <div class="hidden md:flex items-center space-x-1">
                     <a href="/notices" class="py-4 px-2 text-gray-500 font-semibold hover:text-red-500 transition duration-300">📢 공지사항</a>
                     <a href="/qna" class="py-4 px-2 text-gray-500 font-semibold hover:text-blue-500 transition duration-300">❓ QnA</a>
@@ -36,6 +36,10 @@
                 <!-- 로그인 했을 때 보여줄 메뉴 -->
                 <div sec:authorize="isAuthenticated()" class="flex items-center space-x-3">
                     <span class="text-gray-500 text-sm">반갑습니다, <span sec:authentication="name" class="font-bold text-gray-700">User</span>님!</span>
+
+                    <!-- 마이페이지 버튼 -->
+                    <a href="/mypage" class="py-2 px-2 font-medium text-blue-500 rounded hover:bg-blue-100 transition duration-300">마이페이지</a>
+
                     <form th:action="@{/logout}" method="post" class="inline">
                         <button type="submit" class="py-2 px-2 font-medium text-gray-500 rounded hover:bg-red-500 hover:text-white transition duration-300">로그아웃</button>
                     </form>
@@ -55,7 +59,7 @@
         <h3 class="text-2xl mb-8 text-gray-200 drop-shadow-lg">최고의 상품을 만나보세요.</h3>
 
         <div class="flex space-x-4">
-            <!-- [추가] 공지사항 버튼 -->
+            <!-- 공지사항 버튼 -->
             <a href="/notices" class="bg-gray-800 text-white font-bold rounded-full py-3 px-8 shadow-lg uppercase tracking-wider hover:bg-gray-900 transition">
                 공지사항 확인
             </a>
@@ -73,7 +77,7 @@
 <section class="container mx-auto px-6 p-10">
     <h2 class="text-4xl font-bold text-center text-gray-800 mb-8">주요 기능</h2>
 
-    <!-- [추가] 공지사항 소개 섹션 -->
+    <!-- 공지사항 소개 섹션 -->
     <div class="flex items-center flex-wrap mb-20 border-b pb-10">
         <div class="w-full md:w-1/2 px-5 mb-6 md:mb-0">
             <!-- 이미지 플레이스홀더 -->
@@ -88,7 +92,7 @@
         </div>
     </div>
 
-    <!-- QnA 섹션 (기존 내용) -->
+    <!-- QnA 섹션 -->
     <div class="flex items-center flex-wrap mb-20">
         <div class="w-full md:w-1/2">
             <h4 class="text-3xl text-gray-800 font-bold mb-3">질문과 답변 (QnA)</h4>
