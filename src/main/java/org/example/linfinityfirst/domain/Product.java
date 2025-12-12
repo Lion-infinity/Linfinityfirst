@@ -40,4 +40,18 @@ public class Product {
         this.stock = stock;
         this.seller = seller;
     }
+
+    /**
+     * 상품 정보 수정 메서드
+     * @param name 수정할 상품 이름
+     * @param imageUrl 수정할 이미지 URL
+     * @param description 수정할 상품 설명
+     * @param stock 수정할 재고 수량
+     */
+    public void update(String name, String imageUrl, String description, Integer stock) {
+        this.name = name;
+        this.imageUrl = imageUrl;
+        this.description = description;
+        this.stock = stock;
+    }
 }

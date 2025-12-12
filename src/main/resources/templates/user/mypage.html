@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>마이페이지 - Linfinity Shop</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+
+<!-- 상단 네비게이션 -->
+<nav class="bg-white shadow-lg mb-10">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+        <a href="/" class="text-xl font-bold text-gray-700">Linfinity Shop</a>
+        <a href="/" class="text-gray-500 hover:text-blue-500">🏠 홈으로</a>
+    </div>
+</nav>
+
+<div class="max-w-5xl mx-auto px-4">
+    <div class="flex flex-col md:flex-row gap-6">
+
+        <!-- 좌측: 회원 정보 카드 -->
+        <div class="w-full md:w-1/3">
+            <div class="bg-white p-6 rounded-lg shadow-md text-center">
+                <div class="mb-4">
+                    <div class="w-24 h-24 bg-gray-200 rounded-full mx-auto flex items-center justify-center text-3xl">👤</div>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">
+                    <span sec:authentication="name">User</span>님
+                </h2>
+                <p class="text-gray-500 mb-6" id="userRole">회원</p>
+
+                <form th:action="@{/logout}" method="post">
+                    <button type="submit" class="w-full bg-red-500 text-white py-2 rounded hover:bg-red-600 transition">로그아웃</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- 우측: 활동 내역 -->
+        <div class="w-full md:w-2/3">
+
+            <!-- 1. 일반 유저 & 판매자: 내가 쓴 QnA -->
+            <div sec:authorize="hasAnyRole('USER', 'SELLER', 'ADMIN', 'ROOT')" class="bg-white p-6 rounded-lg shadow-md mb-6">
+                <h3 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">❓ 내가 작성한 QnA</h3>
+                <div id="myQnaList" class="space-y-3">
+                    <p class="text-gray-400 text-center py-4">불러오는 중...</p>
+                </div>
+            </div>
+
+            <!-- 2. 관리자: 내가 쓴 공지사항 -->
+            <div sec:authorize="hasAnyRole('ADMIN', 'ROOT')" class="bg-white p-6 rounded-lg shadow-md mb-6">
+                <h3 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">📢 내가 등록한 공지사항</h3>
+                <div id="myNoticeList" class="space-y-3">
+                    <p class="text-gray-400 text-center py-4">불러오는 중...</p>
+                </div>
+            </div>
+
+            <!-- 3. [추가] 판매자: 내 상품 관리 -->
+            <!-- 판매자, 관리자, 루트 권한이 있을 때만 보임 -->
+            <div sec:authorize="hasAnyRole('SELLER', 'ADMIN', 'ROOT')" class="bg-white p-6 rounded-lg shadow-md mb-6">
+                <div class="flex justify-between items-center mb-4 border-b pb-2">
+                    <h3 class="text-xl font-bold text-gray-800">📦 내 상품 관리</h3>
+                    <!-- 상품 등록 페이지로 이동하는 버튼 -->
+                    <a href="/product/register" class="text-sm bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition">상품 등록</a>
+                </div>
+
+                <div id="myProductList" class="space-y-3">
+                    <p class="text-gray-400 text-center py-4">불러오는 중...</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    // 1. 내 정보 로딩 (역할 표시용)
+    fetch('/api/users/me')
+        .then(res => res.json())
+        .then(user => {
+            let roleName = "회원";
+            // 역할 이름에 따라 한글 명칭 변경
+            const r = user.role;
+            if(r.includes('ADMIN') || r.includes('ROOT')) roleName = "관리자";
+            else if(r.includes('SELLER')) roleName = "판매자";
+
+            document.getElementById('userRole').innerText = roleName;
+        })
+        .catch(() => {});
+
+    // 2. QnA 목록 로딩
+    fetch('/api/users/me/qna')
+        .then(res => { if(!res.ok) throw new Error(); return res.json(); })
+        .then(data => {
+            const list = document.getElementById('myQnaList');
+            if(list) {
+                list.innerHTML = '';
+                if(data.length === 0) list.innerHTML = '<p class="text-gray-400 text-center text-sm">작성한 질문이 없습니다.</p>';
+
+                data.forEach(q => {
+                    const status = q.answered ? '<span class="text-green-600 font-bold text-xs">[완료]</span>' : '<span class="text-gray-400 text-xs">[대기]</span>';
+                    // 날짜 처리
+                    const dateStr = q.questionCreatedAt ? q.questionCreatedAt.substring(0,10) : '';
+
+                    list.innerHTML += `
+                        <div class="flex justify-between items-center p-3 hover:bg-gray-50 border rounded cursor-pointer transition" onclick="location.href='/qna/${q.qnaId}'">
+                            <div class="truncate pr-4">
+                                <span class="mr-2">${status}</span>
+                                <span class="font-medium text-gray-800 text-sm">${q.title}</span>
+                            </div>
+                            <span class="text-xs text-gray-400 flex-shrink-0">${dateStr}</span>
+                        </div>
+                    `;
+                });
+            }
+        }).catch(() => {});
+
+    // 3. 공지사항 목록 로딩 (관리자용)
+    // 화면에 영역이 존재할 때만 호출
+    if(document.getElementById('myNoticeList')) {
+        fetch('/api/users/me/notices')
+            .then(res => { if(!res.ok) throw new Error(); return res.json(); })
+            .then(data => {
+                const list = document.getElementById('myNoticeList');
+                list.innerHTML = '';
+                if(data.length === 0) list.innerHTML = '<p class="text-gray-400 text-center text-sm">작성한 공지가 없습니다.</p>';
+
+                data.forEach(n => {
+                    const dateStr = n.createdAt ? n.createdAt.substring(0,10) : '';
+                    list.innerHTML += `
+                        <div class="flex justify-between items-center p-3 hover:bg-gray-50 border rounded cursor-pointer transition" onclick="location.href='/notices/${n.id}'">
+                            <span class="font-medium text-gray-800 text-sm truncate pr-4">📢 ${n.title}</span>
+                            <span class="text-xs text-gray-400 flex-shrink-0">${dateStr}</span>
+                        </div>
+                    `;
+                });
+            }).catch(() => {});
+    }
+
+    // 4. [추가] 내 상품 목록 로딩 (판매자용)
+    if(document.getElementById('myProductList')) {
+        fetch('/api/users/me/products')
+            .then(res => { if(!res.ok) throw new Error(); return res.json(); })
+            .then(data => {
+                const list = document.getElementById('myProductList');
+                list.innerHTML = '';
+                if(data.length === 0) {
+                    list.innerHTML = '<p class="text-gray-400 text-center text-sm">등록한 상품이 없습니다.</p>';
+                } else {
+                    data.forEach(p => {
+                        // 가격에 콤마 찍기
+                        const price = p.price ? p.price.toLocaleString() : 0;
+                        // 이미지 URL 처리 (없으면 회색 박스)
+                        const imgTag = p.imageUrl && p.imageUrl !== 'no_image.png'
+                            ? `<img src="${p.imageUrl}" class="w-full h-full object-cover">`
+                            : `<div class="w-full h-full bg-gray-200 flex items-center justify-center text-xs text-gray-400">No Img</div>`;
+
+                        list.innerHTML += `
+                            <div class="flex justify-between items-center p-3 hover:bg-gray-50 border rounded cursor-pointer transition" onclick="location.href='/products/${p.productId}'">
+                                <div class="flex items-center overflow-hidden">
+                                    <div class="w-10 h-10 rounded mr-3 flex-shrink-0 overflow-hidden border border-gray-200">
+                                        ${imgTag}
+                                    </div>
+                                    <div class="flex flex-col">
+                                        <span class="font-medium text-gray-800 text-sm truncate w-40">${p.name}</span>
+                                        <span class="text-xs text-blue-600 font-bold">${price}원</span>
+                                    </div>
+                                </div>
+                                <span class="text-xs text-gray-500 flex-shrink-0 bg-gray-100 px-2 py-1 rounded">재고: ${p.stock}</span>
+                            </div>
+                        `;
+                    });
+                }
+            }).catch(() => {});
+    }
+</script>
+
+</body>
+</html>

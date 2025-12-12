@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>상품 등록</title>
+    <style>
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        form div {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"],
+        input[type="number"],
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box; /* 패딩이 너비에 포함되도록 설정 */
+        }
+        textarea {
+            resize: vertical;
+            height: 100px;
+        }
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        .submit-btn {
+            background-color: #007bff;
+            color: white;
+        }
+        .back-btn {
+            background-color: #6c757d;
+            color: white;
+        }
+        .image-preview-container {
+            margin-top: 15px;
+            text-align: center;
+            border: 1px dashed #ccc;
+            padding: 10px;
+        }
+        #image-preview {
+            max-width: 100%;
+            max-height: 200px;
+            display: none; /* 초기에는 숨김 */
+        }
+        .message {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+            display: none;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🆕 새 상품 등록</h1>
+
+    <div id="status-message" class="message"></div>
+
+    <form id="register-form" enctype="multipart/form-data">
+        <div>
+            <label for="name">상품 이름:</label>
+            <input type="text" id="name" name="name" required>
+        </div>
+        <div>
+            <label for="description">상품 설명:</label>
+            <textarea id="description" name="description" required></textarea>
+        </div>
+        <div>
+            <label for="stock">재고 수량:</label>
+            <input type="number" id="stock" name="stock" min="0" value="1" required>
+        </div>
+        <div>
+            <label for="imageFile">상품 이미지 파일:</label>
+            <input type="file" id="imageFile" name="imageFile" accept="image/*">
+        </div>
+        <div class="image-preview-container">
+            <p>이미지 미리보기</p>
+            <img id="image-preview" src="#" alt="이미지 미리보기">
+        </div>
+
+        <div>
+            <button type="submit" class="submit-btn">✅ 상품 등록</button>
+            <button type="button" class="back-btn" onclick="location.href='/products'">🔙 목록으로</button>
+            <button type="button" class="back-btn" onclick="location.href='/'">🏠 메인 페이지</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    document.getElementById('imageFile').addEventListener('change', function(event) {
+        const preview = document.getElementById('image-preview');
+        const file = event.target.files[0];
+
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            }
+            reader.readAsDataURL(file);
+        } else {
+            preview.src = '#';
+            preview.style.display = 'none';
+        }
+    });
+
+    document.getElementById('register-form').addEventListener('submit', function(event) {
+        event.preventDefault(); // 기본 폼 제출 방지
+
+        const form = event.target;
+        // FormData를 사용하여 폼 데이터 (텍스트 필드와 파일)를 한 번에 수집
+        const formData = new FormData(form);
+        const statusMessage = document.getElementById('status-message');
+
+        // 재고를 숫자로 변환 (FormData는 모든 값을 문자열로 처리)
+        // formData.set('stock', parseInt(formData.get('stock'))); // Java Service에서 Integer로 자동 변환 처리 가능성 있음
+
+        // API 엔드포인트: POST /api/product
+        fetch('/api/product', {
+            method: 'POST',
+            // 파일 업로드를 위해 Content-Type을 지정하지 않음 (브라우저가 multipart/form-data를 자동 설정)
+            body: formData
+        })
+            .then(response => {
+                if (response.ok) {
+                    return response.json(); // 성공 시 응답 본문 (등록된 상품 ID 등) 처리
+                }
+                // 4xx, 5xx 에러 처리
+                return response.text().then(text => { throw new Error(text || '상품 등록 실패: 서버 오류'); });
+            })
+            .then(data => {
+                // 성공 메시지 표시
+                statusMessage.className = 'message success';
+                statusMessage.textContent = `✨ 상품 등록 성공! 목록으로 이동합니다.`;
+                statusMessage.style.display = 'block';
+                form.reset(); // 폼 초기화
+                document.getElementById('image-preview').style.display = 'none'; // 미리보기 숨김
+            })
+            .catch(error => {
+                console.error('등록 오류:', error);
+                // 에러 메시지 표시
+                statusMessage.className = 'message error';
+                statusMessage.textContent = '❌ 상품 등록 중 오류가 발생했습니다: ' + error.message;
+                statusMessage.style.display = 'block';
+            });
+    });
+</script>
+</body>
+</html>

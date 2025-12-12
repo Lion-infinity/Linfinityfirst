@@ -16,12 +16,15 @@ import java.time.LocalDateTime;
 @Table(name = "notices")
 public class Notice {
 
+    //공지사항 번호
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    //공지사항 제목
     @Column(nullable = false)
     private String title;
 
+    //공지사항 내용
     @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
 
@@ -31,6 +34,7 @@ public class Notice {
     private User user;
 
     @CreatedDate
+    @Column(updatable = false)
     private LocalDateTime createdAt;
 
     private int viewCount;
@@ -41,9 +45,14 @@ public class Notice {
         this.user = user;
         this.viewCount = 0;
     }
-
+    // 수정 편의 메서드
     public void update(String title, String content) {
         this.title = title;
         this.content = content;
+    }
+
+    // 조회수 증가 편의 메서드
+    public void increaseViewCount() {
+        this.viewCount++;
     }
 }

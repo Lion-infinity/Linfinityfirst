@@ -83,4 +83,57 @@ public class ProductService {
                 .orElseThrow(() -> new IllegalArgumentException("상품이 존재하지 않습니다."));
         return ProductResponseDto.from(product);
     }
+
+    // 상품 수정
+    @Transactional
+    public void updateProduct(Long productId, ProductRequestDto requestDto, MultipartFile imageFile, String username) throws IOException {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new IllegalArgumentException("수정하려는 상품이 존재하지 않습니다."));
+
+        // 1. 권한 확인 (상품 등록자와 현재 수정 요청자가 같은지 확인)
+        if (!product.getSeller().getUsername().equals(username)) {
+            throw new IllegalArgumentException("상품 수정 권한이 없습니다.");
+        }
+
+        // 2. 이미지 파일 처리 (신규 파일이 있으면 업로드 및 URL 업데이트)
+        String imageUrl = product.getImageUrl(); // 기존 이미지 URL 유지
+
+        if (imageFile != null && !imageFile.isEmpty()) {
+            // 파일 업로드 로직 (createProduct의 로직 재활용)
+            String uploadDir = "C:/linfinity_shop/images/";
+            String originalFilename = imageFile.getOriginalFilename();
+            String saveFileName = UUID.randomUUID() + "_" + originalFilename;
+
+            File saveFile = new File(uploadDir + saveFileName);
+            if (!saveFile.getParentFile().exists()) {
+                saveFile.getParentFile().mkdirs();
+            }
+            imageFile.transferTo(saveFile);
+
+            imageUrl = "/images/" + saveFileName;
+        } else {
+            // 파일이 없지만 DTO에 새로운 URL이 있다면 사용
+            if(requestDto.getImageUrl() != null && !requestDto.getImageUrl().isEmpty()){
+                imageUrl = requestDto.getImageUrl();
+            }
+        }
+
+        // 3. 상품 정보 업데이트 (Product 엔티티의 update 메서드 호출)
+        product.update(
+                requestDto.getName(),
+                imageUrl,
+                requestDto.getDescription(),
+                requestDto.getStock()
+        );
+    }
+    //내가 등록한 상품 조회 (판매자 마이페이지용)
+    @Transactional(readOnly = true)
+    public List<ProductResponseDto> getMyProducts(String username) {
+        User seller = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("판매자 정보를 찾을 수 없습니다."));
+
+        return productRepository.findAllBySellerOrderByIdDesc(seller).stream()
+                .map(ProductResponseDto::from)
+                .collect(Collectors.toList());
+    }
 }
