@@ -34,53 +34,43 @@
         }
         .image-area {
             flex: 1;
-            max-width: 50%;
+            max-width: 400px;
             text-align: center;
         }
-        .image-area img {
-            max-width: 100%;
+        .product-image {
+            width: 100%;
             height: auto;
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
-        .info-area {
-            flex: 1;
-            padding-left: 20px;
+        .details-area {
+            flex: 2;
         }
-        .info-area h2 {
-            margin-top: 0;
-            font-size: 1.8em;
-            color: #007bff;
-            border-bottom: 2px solid #eee;
-            padding-bottom: 10px;
+        .detail-item {
             margin-bottom: 15px;
-        }
-        .info-area p {
-            margin: 10px 0;
-        }
-        .info-area strong {
-            display: inline-block;
-            width: 90px;
-            color: #555;
-            font-weight: bold;
-        }
-        .description-box {
-            margin-top: 20px;
-            padding: 15px;
-            border: 1px dashed #ccc;
-            background-color: #f9f9f9;
-            border-radius: 4px;
-        }
-        .stock-info {
             font-size: 1.1em;
-            color: #dc3545;
+        }
+        .detail-item strong {
+            display: inline-block;
+            width: 100px;
+            color: #555;
+        }
+        .price {
+            font-size: 2em;
+            color: #e63946;
             font-weight: bold;
+            margin: 20px 0;
+        }
+        .description-area {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
         }
         .button-group {
             margin-top: 30px;
             display: flex;
             gap: 10px;
-            justify-content: flex-start;
+            justify-content: flex-end;
         }
         .button-group button {
             padding: 12px 20px;
@@ -91,19 +81,28 @@
             transition: background-color 0.3s;
         }
         .buy-btn {
-            background-color: #28a745;
+            background-color: #007bff;
             color: white;
         }
         .buy-btn:hover {
-            background-color: #218838;
+            background-color: #0056b3;
         }
         .edit-btn {
             background-color: #ffc107;
-            color: #212529;
+            color: #333;
         }
         .edit-btn:hover {
             background-color: #e0a800;
         }
+        /* --- [추가] 삭제 버튼 스타일 --- */
+        .delete-btn {
+            background-color: #dc3545; /* 빨간색 */
+            color: white;
+        }
+        .delete-btn:hover {
+            background-color: #c82333;
+        }
+        /* ------------------------------------- */
         .list-btn {
             background-color: #6c757d;
             color: white;
@@ -111,120 +110,100 @@
         .list-btn:hover {
             background-color: #5a6268;
         }
-        .main-btn {
-            background-color: #007bff;
-            color: white;
-            padding: 10px 15px;
-            border: none;
-            border-radius: 5px;
-            text-decoration: none;
-            font-weight: bold;
-            transition: background-color 0.3s;
-        }
-        .main-btn:hover {
-            background-color: #0056b3;
+        .hidden {
+            display: none !important;
         }
     </style>
 </head>
 <body>
 
 <div class="header-container">
-    <h1 id="page-title">상품 상세 정보</h1>
-    <a href="/" class="main-btn">🏠 메인 화면으로</a>
+    <h1 id="productName">상품 상세 정보</h1>
+    <div sec:authorize="isAuthenticated()">
+        <span id="currentUser" th:text="${#authentication.name}">Username</span>
+        <span sec:authorize="hasRole('SELLER')" id="isSeller" class="hidden"></span>
+        <span sec:authorize="hasAnyRole('ADMIN', 'ROOT')" id="isAdminOrRoot" class="hidden"></span>
+    </div>
 </div>
 
-<div class="hidden" style="display: none;">
-    <span id="currentUser" sec:authorize="isAuthenticated()" sec:authentication="name"></span>
-    <span id="isSeller" sec:authorize="hasRole('SELLER')">true</span>
-    <span id="isAdminOrRoot" sec:authorize="hasAnyRole('ADMIN', 'ROOT')">true</span>
+<div id="productDetail">
 </div>
 
-<div id="product-detail" class="product-container">
-    <p>상품 정보를 불러오는 중...</p>
+<div id="loadingMessage" style="text-align: center; margin-top: 50px;">
+    상품 상세 정보를 불러오는 중...
+</div>
+
+<div id="errorMessage" class="hidden">
 </div>
 
 <script th:inline="javascript">
-    // URL 경로에서 상품 ID를 가져옵니다.
-    const productId = window.location.pathname.split("/").pop();
+    // URL에서 상품 ID를 가져옵니다.
+    const pathSegments = window.location.pathname.split('/');
+    const productId = pathSegments[pathSegments.length - 1];
 
     document.addEventListener('DOMContentLoaded', fetchProductDetail);
 
-    // 상품 상세 정보 가져오기
     function fetchProductDetail() {
-        if (!productId || isNaN(productId)) {
-            document.getElementById('product-detail').innerHTML = '<p style="color: red; text-align: center;">유효한 상품 ID가 지정되지 않았습니다.</p>';
-            return;
-        }
-
-        // API 엔드포인트 호출
         fetch(`/api/product/${productId}`)
             .then(response => {
-                if (response.status === 404) {
-                    throw new Error('상품이 존재하지 않습니다.');
-                }
                 if (!response.ok) {
-                    throw new Error('데이터 로드 중 네트워크 응답 오류');
+                    throw new Error('상품 정보를 찾을 수 없거나 서버 오류가 발생했습니다.');
                 }
                 return response.json();
             })
             .then(product => {
-                // 페이지 제목 업데이트
-                document.getElementById('page-title').textContent = product.name;
-
-                const detailContainer = document.getElementById('product-detail');
-                if (!detailContainer) return;
-
-                detailContainer.className = 'product-container';
-
-                const imageUrl = product.imageUrl && product.imageUrl.trim() !== ''
-                    ? product.imageUrl
-                    : '/images/default-placeholder.png';
-
-                // 상품 번호(ID)를 화면에 표시하는 부분을 제거했습니다.
-                detailContainer.innerHTML = `
-                    <div class="image-area">
-                        <img src="${imageUrl}" alt="${product.name} 이미지">
-                    </div>
-
-                    <div class="info-area">
-                        <h2>${product.name}</h2>
-                        <p><strong>판매자:</strong> ${product.sellerName}</p>
-                        <p><strong>재고 수량:</strong> <span class="stock-info">${product.stock}개</span></p>
-
-                        <div class="description-box">
-                            <h4>상품 상세 설명</h4>
-                            <p>${product.description}</p>
-                        </div>
-
-                        <div class="button-group">
-                            <button onclick="purchaseProduct()" class="buy-btn">🛒 상품 구매</button>
-
-                            <a id="editLink" href="/products/edit/${product.productId}" class="hidden">
-                                <button class="edit-btn">✏️ 상품 수정</button>
-                            </a>
-
-                            <a href="/products">
-                                <button class="list-btn">🔙 목록으로</button>
-                            </a>
-                        </div>
-                    </div>
-                `;
-
-                // 권한 체크 및 버튼 노출 실행
+                renderProduct(product);
                 checkAuthAndShowButtons(product);
-
+                document.getElementById('loadingMessage').classList.add('hidden');
             })
             .catch(error => {
-                console.error('상품 상세 로드 중 오류:', error);
-                const detailContainer = document.getElementById('product-detail');
-                if (detailContainer) {
-                    detailContainer.innerHTML = `<p style="color: red; text-align: center; margin-top: 50px;">상품 상세 정보를 불러오는 데 실패했습니다: ${error.message}</p>`;
-                }
+                console.error('상품 상세 정보 로드 실패:', error);
+                document.getElementById('loadingMessage').classList.add('hidden');
+                const errorDiv = document.getElementById('errorMessage');
+                errorDiv.classList.remove('hidden');
+                errorDiv.innerHTML = `<p style="color: red; text-align: center; margin-top: 50px;">상품 상세 정보를 불러오는 데 실패했습니다: ${error.message}</p>`;
             });
     }
 
+    function renderProduct(product) {
+        document.getElementById('productName').innerText = product.name;
+        const detailDiv = document.getElementById('productDetail');
+
+        detailDiv.innerHTML = `
+            <div class="product-container">
+                <div class="image-area">
+                    <img src="${product.imageUrl || '/images/no_image.png'}" alt="${product.name}" class="product-image">
+                </div>
+                <div class="details-area">
+                    <div class="detail-item"><strong>상품명:</strong> ${product.name}</div>
+                    <div class="detail-item"><strong>판매자:</strong> ${product.sellerName}</div>
+                    <div class="detail-item"><strong>재고:</strong> ${product.stock}개</div>
+
+                    <div class="description-area">
+                        <h3>상품 설명</h3>
+                        <p>${product.description}</p>
+                    </div>
+
+                    <div class="button-group">
+                        <button onclick="purchaseProduct()" class="buy-btn">🛒 상품 구매</button>
+
+                        <a id="editLink" href="/products/edit/${product.productId}" class="hidden">
+                            <button class="edit-btn">✏️ 상품 수정</button>
+                        </a>
+
+                        <button id="deleteBtn" onclick="deleteProduct()" class="delete-btn hidden">🗑️ 상품 삭제</button>
+                        <a href="/products">
+                            <button class="list-btn">🔙 목록으로</button>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
     /**
-     * 권한을 체크하여 상품 수정 버튼을 노출합니다.
+     * 권한을 체크하여 상품 수정/삭제 버튼을 노출합니다.
+     * (상품을 올린 판매자, ADMIN, ROOT 권한을 가진 사람만 볼 수 있도록)
      */
     function checkAuthAndShowButtons(product) {
         // 1. 로그인 사용자 이름 및 권한 요소 가져오기
@@ -239,31 +218,56 @@
         const isSeller = !!isSellerElement;
         const isAdminOrRoot = !!isAdminOrRootElement;
 
-        // 2. ⭐️ 수정 권한 조건 확인: ⭐️
+        // 2. 수정 및 삭제 권한 조건 확인:
         // (ADMIN 또는 ROOT 권한이 있는 경우) OR (SELLER 권한이 있고 현재 사용자가 판매자인 경우)
-        const canEdit = isAdminOrRoot || (isSeller && currentUser && currentUser === sellerName);
+        const isProductSeller = isSeller && currentUser && currentUser === sellerName;
+        const canEditOrDelete = isAdminOrRoot || isProductSeller; // 삭제 버튼도 동일하게 적용
 
-        // 3. 수정 링크 요소 가져오기
+        // 3. 수정 및 삭제 버튼 요소 가져오기
         const editLink = document.getElementById('editLink');
+        const deleteBtn = document.getElementById('deleteBtn'); // [추가] 삭제 버튼 요소 가져오기
 
         // 4. 권한이 있을 경우 버튼 노출
-        if (editLink && canEdit) {
+        if (editLink && canEditOrDelete) {
             editLink.classList.remove('hidden');
+        }
+        // [수정] 삭제 버튼 권한 적용
+        if (deleteBtn && canEditOrDelete) {
+            deleteBtn.classList.remove('hidden');
         }
     }
 
     /**
-     * 상품 구매 버튼 클릭 시 팝업을 띄우는 함수
+     * [추가] 상품 삭제 API를 호출하고 성공 시 목록 페이지로 이동합니다. (확인 메시지 제거됨)
+     */
+    function deleteProduct() {
+        // 확인 메시지 제거됨 (이전 요청사항 반영)
+
+        fetch(`/api/product/${productId}`, {
+            method: 'DELETE'
+        })
+            .then(response => {
+                if (!response.ok) {
+                    // HTTP 상태 코드가 200 (OK)이 아니면 에러로 처리
+                    return response.text().then(text => {
+                        throw new Error(text || '상품 삭제 중 오류가 발생했습니다.');
+                    });
+                }
+                // 성공 시 알림 후 목록 페이지로 이동
+                alert('✅ 상품이 성공적으로 삭제되었습니다.');
+                window.location.href = '/products';
+            })
+            .catch(error => {
+                console.error('상품 삭제 실패:', error);
+                alert('상품 삭제에 실패했습니다: ' + error.message);
+            });
+    }
+
+    /**
+     * [기존] 원래 파일의 내용대로 빈 함수로 유지
      */
     function purchaseProduct() {
-        alert("🎉 결제가 완료되었습니다.");
     }
 </script>
-<style>
-    /* JavaScript에서 사용하는 숨김 클래스 */
-    .hidden {
-        display: none !important;
-    }
-</style>
 </body>
 </html>

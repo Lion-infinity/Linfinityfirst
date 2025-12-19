@@ -63,4 +63,10 @@ public class ProductController {
         productService.updateProduct(productId, requestDto, imageFile, principal.getName());
         return ResponseEntity.noContent().build(); // HTTP 204 No Content
     }
+
+    @DeleteMapping("/{productId}")
+    public ResponseEntity<String> deleteProduct(@PathVariable Long productId, Principal principal) {
+        productService.deleteProduct(productId, principal.getName());
+        return ResponseEntity.ok("상품이 삭제되었습니다.");
+    }
 }
