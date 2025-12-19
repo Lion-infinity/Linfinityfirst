@@ -136,4 +136,26 @@ public class ProductService {
                 .map(ProductResponseDto::from)
                 .collect(Collectors.toList());
     }
+
+    @Transactional
+    public void deleteProduct(Long productId, String username) {
+
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new IllegalArgumentException("삭제할 상품이 존재하지 않습니다."));
+
+        User currentUser = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("사용자 정보를 찾을 수 없습니다."));
+
+        boolean isSeller = product.getSeller().getId().equals(currentUser.getId());
+        String roleName = currentUser.getRole().getRoleName();
+
+        boolean isAdmin = "ADMIN".equals(roleName);
+        boolean isRoot = "ROOT".equals(roleName);
+
+        if (!(isSeller || isAdmin || isRoot)) {
+            throw new IllegalArgumentException("상품을 삭제할 권한이 없습니다. (판매자 본인, ADMIN, ROOT만 삭제 가능)");
+        }
+
+        productRepository.delete(product);
+    }
 }
